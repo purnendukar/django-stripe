@@ -1,6 +1,15 @@
 # Third Party Stuff
-from django.contrib.postgres.fields import ArrayField
+from django.conf import settings
 from django.db import models
+
+if settings.DATABASES["default"]["ENGINE"].endswith("postgresql"):
+    from django.contrib.postgres.fields import ArrayField
+    LocalesField = ArrayField
+else:
+    class LocalesField(models.JSONField):
+        def __init__(self, *args, **kwargs):
+            kwargs.pop("size", None)
+            return super().__init__(*args[1:], **kwargs)
 
 # Django Stripe Stuff
 from django_stripe.models.abstracts.mixins import AbstractStripeModel
@@ -57,7 +66,7 @@ class AbstractStripeProduct(AbstractStripeModel):
             "invoice line item descriptions."
         ),
     )
-    images = ArrayField(
+    images = LocalesField(
         models.CharField(max_length=255),
         size=8,
         default=list,

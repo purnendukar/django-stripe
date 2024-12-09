@@ -1,6 +1,16 @@
 # Third Party Stuff
-from django.contrib.postgres.fields import ArrayField
+from django.conf import settings
+
 from django.db import models
+
+if settings.DATABASES["default"]["ENGINE"].endswith("postgresql"):
+    from django.contrib.postgres.fields import ArrayField
+    LocalesField = ArrayField
+else:
+    class LocalesField(models.JSONField):
+        def __init__(self, *args, **kwargs):
+            kwargs.pop("size", None)
+            return super().__init__(*args[1:], **kwargs)
 
 # Django Stripe Stuff
 from django_stripe.models.abstracts.mixins import AbstractStripeModel
@@ -84,7 +94,7 @@ class AbstractStripeCustomer(AbstractStripeModel):
         help_text="Describes the customer's tax exemption status. When set to reverse, "
         'invoice and receipt PDFs include the text "Reverse charge"',
     )
-    preferred_locales = ArrayField(
+    preferred_locales = LocalesField(
         models.CharField(default="", blank=True, max_length=255),
         default=list,
         help_text=(
